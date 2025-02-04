@@ -1,27 +1,52 @@
-// This function checks a text node for the pattern "(x) Connects" and replaces it.
-function replaceConnectsInTextNode(node: Text): void {
-  // Match a number followed by "Connects" not already followed by a dollar value, e.g. not "Connects ($"
-  const regex = /(\d+)\s*Connects(?!\s*\(\$)/g;
+const keyword = "Connects";
+const rate = 0.15;
+const symbol = "$";
+
+function replaceVariableTextNode(node: Text): void {
+  if ((node.parentElement as HTMLElement)?.getAttribute("data-processed"))
+    return; // Skip if already processed
+  const escapedKeyword = keyword.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+  const regex = new RegExp(`(\\d+)\\s*${escapedKeyword}(?!\\s*\\(\\$)`, "gi");
   const originalText = node.textContent || "";
   const newText = originalText.replace(regex, (_, p1) => {
-    const connectsCount = parseFloat(p1);
-    const dollarValue = connectsCount * 0.15;
-    // Format the dollar value to no decimals if an integer, otherwise two decimals.
+    const count = parseFloat(p1);
+    const dollarValue = count * rate;
     const formatted = Number.isInteger(dollarValue)
       ? `${dollarValue}`
       : dollarValue.toFixed(2);
-    // Append the calculated dollar value after the matched text.
-    return `${p1} Connects ($${formatted})`;
+    return `${p1} ${keyword} (${symbol}${formatted})`;
   });
   if (newText !== originalText) {
     node.textContent = newText;
+    (node.parentElement as HTMLElement)?.setAttribute("data-processed", "true"); // Mark as processed
+  }
+}
+
+function replaceVariableColonTextNode(node: Text): void {
+  if ((node.parentElement as HTMLElement)?.getAttribute("data-processed"))
+    return; // Skip if already processed
+  const escapedKeyword = keyword.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+  const regex = new RegExp(`${escapedKeyword}:\\s*(\\d+)(?!\\s*\\(\\$)`, "gi");
+  const originalText = node.textContent || "";
+  const newText = originalText.replace(regex, (match, digits) => {
+    const count = parseFloat(digits);
+    const dollarValue = count * rate;
+    const formatted = Number.isInteger(dollarValue)
+      ? `${dollarValue}`
+      : dollarValue.toFixed(2);
+    return `${match} (${symbol}${formatted})`;
+  });
+  if (newText !== originalText) {
+    node.textContent = newText;
+    (node.parentElement as HTMLElement)?.setAttribute("data-processed", "true"); // Mark as processed
   }
 }
 
 // Recursively walk through the DOM to process text nodes.
 function walk(node: Node): void {
   if (node.nodeType === Node.TEXT_NODE) {
-    replaceConnectsInTextNode(node as Text);
+    replaceVariableTextNode(node as Text);
+    replaceVariableColonTextNode(node as Text);
   } else {
     node.childNodes.forEach(walk);
   }
@@ -29,12 +54,13 @@ function walk(node: Node): void {
 
 // Set up a MutationObserver to catch dynamically added/updated content.
 function observeMutations(): void {
-  const observer = new MutationObserver((mutations) => {
+  const observer = new MutationObserver((mutations: MutationRecord[]) => {
     for (const mutation of mutations) {
       if (mutation.type === "childList") {
         mutation.addedNodes.forEach((node) => walk(node));
       } else if (mutation.type === "characterData") {
-        replaceConnectsInTextNode(mutation.target as Text);
+        replaceVariableTextNode(mutation.target as Text);
+        replaceVariableColonTextNode(mutation.target as Text);
       }
     }
   });

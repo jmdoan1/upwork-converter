@@ -2,9 +2,12 @@ const keyword = "Connects";
 const rate = 0.15;
 const symbol = "$";
 
+/**
+ * Process a text node for patterns like "40 Connects" and appends the calculated value.
+ */
 function replaceVariableTextNode(node: Text): void {
-  if ((node.parentElement as HTMLElement)?.getAttribute("data-processed"))
-    return; // Skip if already processed
+  //   if ((node.parentElement as HTMLElement)?.getAttribute("data-processed"))
+  // return; // Skip if already processed
   const escapedKeyword = keyword.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
   const regex = new RegExp(`(\\d+)\\s*${escapedKeyword}(?!\\s*\\(\\$)`, "gi");
   const originalText = node.textContent || "";
@@ -18,10 +21,14 @@ function replaceVariableTextNode(node: Text): void {
   });
   if (newText !== originalText) {
     node.textContent = newText;
-    (node.parentElement as HTMLElement)?.setAttribute("data-processed", "true"); // Mark as processed
+    // (node.parentElement as HTMLElement)?.setAttribute("data-processed", "true");
   }
 }
 
+/**
+ * Process a text node for patterns like "Connects: 40" (all in one text node)
+ * and appends the calculated value.
+ */
 function replaceVariableColonTextNode(node: Text): void {
   if ((node.parentElement as HTMLElement)?.getAttribute("data-processed"))
     return; // Skip if already processed
@@ -38,21 +45,72 @@ function replaceVariableColonTextNode(node: Text): void {
   });
   if (newText !== originalText) {
     node.textContent = newText;
-    (node.parentElement as HTMLElement)?.setAttribute("data-processed", "true"); // Mark as processed
+    (node.parentElement as HTMLElement)?.setAttribute("data-processed", "true");
   }
 }
 
-// Recursively walk through the DOM to process text nodes.
+/**
+ * Process a case where the pattern is split:
+ * The text node contains (or ends with) "Connects:" and the very next sibling
+ * is an element (any tag) that contains only a number. In that case,
+ * update that element's text to append the conversion.
+ *
+ * For example:
+ *   "Available Connects: " (text node)
+ *   <strong>108</strong> (element node)
+ *
+ * will be updated to:
+ *   "Available Connects: " (unchanged)
+ *   <strong>108 ($16.20)</strong>
+ */
+function replaceColonTaggedNode(node: Node): void {
+  if (node.nodeType === Node.TEXT_NODE) {
+    const text = node.textContent || "";
+    // Check if this text node ends with "Connects:" (case insensitive)
+    const regex = new RegExp(`${keyword}:\\s*$`, "i");
+    if (regex.test(text)) {
+      const nextSibling = node.nextSibling;
+      if (nextSibling && nextSibling.nodeType === Node.ELEMENT_NODE) {
+        const el = nextSibling as HTMLElement;
+        // Check that the element's text contains only digits (ignoring surrounding whitespace)
+        const digitMatch = el.textContent?.trim().match(/^(\d+)$/);
+        if (digitMatch && !el.getAttribute("data-processed-number")) {
+          const digits = digitMatch[1];
+          const count = parseFloat(digits);
+          const dollarValue = count * rate;
+          const formatted = Number.isInteger(dollarValue)
+            ? `${dollarValue}`
+            : dollarValue.toFixed(2);
+          el.textContent = `${digits} (${symbol}${formatted})`;
+          el.setAttribute("data-processed-number", "true");
+        }
+      }
+    }
+  } else {
+    // If this is not a text node, check its children.
+    node.childNodes.forEach((child) => replaceColonTaggedNode(child));
+  }
+}
+
+/**
+ * Recursively walk through the DOM to process nodes.
+ */
 function walk(node: Node): void {
   if (node.nodeType === Node.TEXT_NODE) {
     replaceVariableTextNode(node as Text);
     replaceVariableColonTextNode(node as Text);
-  } else {
-    node.childNodes.forEach(walk);
+  }
+  // Always walk children.
+  node.childNodes.forEach(walk);
+  // Additionally, if the node is an element, run the colon-tag check.
+  if (node.nodeType === Node.ELEMENT_NODE) {
+    replaceColonTaggedNode(node);
   }
 }
 
-// Set up a MutationObserver to catch dynamically added/updated content.
+/**
+ * Set up a MutationObserver to catch dynamically added/updated content.
+ */
 function observeMutations(): void {
   const observer = new MutationObserver((mutations: MutationRecord[]) => {
     for (const mutation of mutations) {
@@ -71,7 +129,6 @@ function observeMutations(): void {
   });
 }
 
-// Initialize by processing the current document and starting the observer.
 function init(): void {
   walk(document.body);
   observeMutations();

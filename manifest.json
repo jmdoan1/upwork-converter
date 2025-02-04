@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Upwork Converter",
+  "version": "1.0",
+  "description": "Replaces Connects with the relevant dollar amount on upwork.com",
+  "content_scripts": [
+    {
+      "matches": ["*://www.upwork.com/*"],
+      "js": ["dist/content.js"],
+      "run_at": "document_end"
+    }
+  ]
+}

@@ -3,6 +3,11 @@
   "name": "Upwork Converter",
   "version": "1.0",
   "description": "Replaces Connects with the relevant dollar amount on upwork.com",
+  "permissions": ["storage"],
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": false
+  },
   "content_scripts": [
     {
       "matches": ["*://www.upwork.com/*"],

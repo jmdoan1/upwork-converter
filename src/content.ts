@@ -1,27 +1,46 @@
-const keyword = "Connects";
-const rate = 0.15;
-const symbol = "$";
+interface Settings {
+  keyword: string;
+  rate: number;
+  symbol: string;
+}
+
+const defaultSettings: Settings = {
+  keyword: "Connects",
+  rate: 0.15,
+  symbol: "$",
+};
+
+let userSettings: Settings = { ...defaultSettings };
 
 /**
  * Process a text node for patterns like "40 Connects" and appends the calculated value.
  */
 function replaceVariableTextNode(node: Text): void {
-  //   if ((node.parentElement as HTMLElement)?.getAttribute("data-processed"))
-  // return; // Skip if already processed
-  const escapedKeyword = keyword.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
-  const regex = new RegExp(`(\\d+)\\s*${escapedKeyword}(?!\\s*\\(\\$)`, "gi");
+  const escapedKeyword = userSettings.keyword.replace(
+    /[-\/\\^$*+?.()|[\]{}]/g,
+    "\\$&"
+  );
+  const escapedSymbol = userSettings.symbol.replace(
+    /[-\/\\^$*+?.()|[\]{}]/g,
+    "\\$&"
+  );
+
+  const regex = new RegExp(
+    `(\\d+)\\s*${escapedKeyword}(?!\\s*\\(${escapedSymbol})`,
+    "gi"
+  );
   const originalText = node.textContent || "";
   const newText = originalText.replace(regex, (_, p1) => {
     const count = parseFloat(p1);
-    const dollarValue = count * rate;
+    const dollarValue = count * userSettings.rate;
     const formatted = Number.isInteger(dollarValue)
       ? `${dollarValue}`
       : dollarValue.toFixed(2);
-    return `${p1} ${keyword} (${symbol}${formatted})`;
+    return `${p1} ${userSettings.keyword} (${userSettings.symbol}${formatted})`;
   });
   if (newText !== originalText) {
+    console.log({ old1: originalText, new1: newText });
     node.textContent = newText;
-    // (node.parentElement as HTMLElement)?.setAttribute("data-processed", "true");
   }
 }
 
@@ -32,18 +51,31 @@ function replaceVariableTextNode(node: Text): void {
 function replaceVariableColonTextNode(node: Text): void {
   if ((node.parentElement as HTMLElement)?.getAttribute("data-processed"))
     return; // Skip if already processed
-  const escapedKeyword = keyword.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
-  const regex = new RegExp(`${escapedKeyword}:\\s*(\\d+)(?!\\s*\\(\\$)`, "gi");
+
+  const escapedKeyword = userSettings.keyword.replace(
+    /[-\/\\^$*+?.()|[\]{}]/g,
+    "\\$&"
+  );
+  const escapedSymbol = userSettings.symbol.replace(
+    /[-\/\\^$*+?.()|[\]{}]/g,
+    "\\$&"
+  );
+
+  const regex = new RegExp(
+    `${escapedKeyword}:\\s*(\\d+)(?!\\s*\\(${escapedSymbol})`,
+    "gi"
+  );
   const originalText = node.textContent || "";
   const newText = originalText.replace(regex, (match, digits) => {
     const count = parseFloat(digits);
-    const dollarValue = count * rate;
+    const dollarValue = count * userSettings.rate;
     const formatted = Number.isInteger(dollarValue)
       ? `${dollarValue}`
       : dollarValue.toFixed(2);
-    return `${match} (${symbol}${formatted})`;
+    return `${match} (${userSettings.symbol}${formatted})`;
   });
   if (newText !== originalText) {
+    console.log({ old2: originalText, new2: newText });
     node.textContent = newText;
     (node.parentElement as HTMLElement)?.setAttribute("data-processed", "true");
   }
@@ -66,23 +98,25 @@ function replaceVariableColonTextNode(node: Text): void {
 function replaceColonTaggedNode(node: Node): void {
   if (node.nodeType === Node.TEXT_NODE) {
     const text = node.textContent || "";
-    // Check if this text node ends with "Connects:" (case insensitive)
-    const regex = new RegExp(`${keyword}:\\s*$`, "i");
+
+    const regex = new RegExp(`${userSettings.keyword}:\\s*$`, "i");
     if (regex.test(text)) {
       const nextSibling = node.nextSibling;
       if (nextSibling && nextSibling.nodeType === Node.ELEMENT_NODE) {
         const el = nextSibling as HTMLElement;
+
         // Check that the element's text contains only digits (ignoring surrounding whitespace)
         const digitMatch = el.textContent?.trim().match(/^(\d+)$/);
-        if (digitMatch && !el.getAttribute("data-processed-number")) {
+        if (digitMatch) {
           const digits = digitMatch[1];
           const count = parseFloat(digits);
-          const dollarValue = count * rate;
+          const dollarValue = count * userSettings.rate;
           const formatted = Number.isInteger(dollarValue)
             ? `${dollarValue}`
             : dollarValue.toFixed(2);
-          el.textContent = `${digits} (${symbol}${formatted})`;
-          el.setAttribute("data-processed-number", "true");
+          const newTextContent = `${digits} (${userSettings.symbol}${formatted})`;
+          console.log({ old3: el.textContent, new3: newTextContent });
+          el.textContent = newTextContent;
         }
       }
     }
@@ -100,9 +134,7 @@ function walk(node: Node): void {
     replaceVariableTextNode(node as Text);
     replaceVariableColonTextNode(node as Text);
   }
-  // Always walk children.
   node.childNodes.forEach(walk);
-  // Additionally, if the node is an element, run the colon-tag check.
   if (node.nodeType === Node.ELEMENT_NODE) {
     replaceColonTaggedNode(node);
   }
@@ -135,7 +167,15 @@ function init(): void {
 }
 
 if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", init);
+  document.addEventListener("DOMContentLoaded", () => {
+    chrome.storage.sync.get(defaultSettings, (items: Settings) => {
+      userSettings = items;
+      init();
+    });
+  });
 } else {
-  init();
+  chrome.storage.sync.get(defaultSettings, (items: Settings) => {
+    userSettings = items;
+    init();
+  });
 }

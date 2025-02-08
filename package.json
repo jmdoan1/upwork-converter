@@ -4,6 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "devDependencies": {
+    "@types/chrome": "^0.0.302",
     "typescript": "^5.7.3"
   }
 }

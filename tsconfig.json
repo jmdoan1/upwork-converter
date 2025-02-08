@@ -5,7 +5,8 @@
     "module": "ESNext",
     "moduleResolution": "node",
     "strict": true,
-    "outDir": "dist"
+    "outDir": "dist",
+    "types": ["chrome"]
   },
   "include": ["src"]
 }

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Upwork Converter Options</title>
+  </head>
+  <body>
+    <h1>Upwork Converter Options</h1>
+    <form id="optionsForm">
+      <label for="keyword">Keyword:</label>
+      <input type="text" id="keyword" name="keyword" />
+      <br />
+
+      <label for="rate">Rate:</label>
+      <input type="number" step="0.01" id="rate" name="rate" />
+      <br />
+
+      <label for="symbol">Symbol:</label>
+      <input type="text" id="symbol" name="symbol" />
+      <br />
+
+      <button type="submit">Save</button>
+      <div id="status"></div>
+    </form>
+    <script src="dist/options.js"></script>
+  </body>
+</html>

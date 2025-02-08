@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Upwork Converter",
   "version": "1.0",
-  "description": "Replaces Connects with the relevant dollar amount on upwork.com",
+  "description": "Displays the relevant dollar amount next to Connects on upwork.com. e.g. 'Available Connects: 108' -> 'Available Connects: 108 ($16.20)'",
   "icons": {
     "16": "icons/uc-icon-16.png",
     "48": "icons/uc-icon-48.png",

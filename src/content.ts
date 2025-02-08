@@ -39,7 +39,6 @@ function replaceVariableTextNode(node: Text): void {
     return `${p1} ${userSettings.keyword} (${userSettings.symbol}${formatted})`;
   });
   if (newText !== originalText) {
-    console.log({ old1: originalText, new1: newText });
     node.textContent = newText;
   }
 }
@@ -75,7 +74,6 @@ function replaceVariableColonTextNode(node: Text): void {
     return `${match} (${userSettings.symbol}${formatted})`;
   });
   if (newText !== originalText) {
-    console.log({ old2: originalText, new2: newText });
     node.textContent = newText;
     (node.parentElement as HTMLElement)?.setAttribute("data-processed", "true");
   }
@@ -115,7 +113,6 @@ function replaceColonTaggedNode(node: Node): void {
             ? `${dollarValue}`
             : dollarValue.toFixed(2);
           const newTextContent = `${digits} (${userSettings.symbol}${formatted})`;
-          console.log({ old3: el.textContent, new3: newTextContent });
           el.textContent = newTextContent;
         }
       }

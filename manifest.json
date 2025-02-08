@@ -3,6 +3,11 @@
   "name": "Upwork Converter",
   "version": "1.0",
   "description": "Replaces Connects with the relevant dollar amount on upwork.com",
+  "icons": {
+    "16": "icons/uc-icon-16.png",
+    "48": "icons/uc-icon-48.png",
+    "128": "icons/uc-icon-128.png"
+  },
   "permissions": ["storage"],
   "options_ui": {
     "page": "options.html",

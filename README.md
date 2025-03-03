@@ -14,6 +14,7 @@ Displays the relevant dollar amount next to Connects on upwork.com. e.g. 'Availa
 ## Installation
 
 - Clone the repo or download the codebase (select the "Code" dropdown then "Download ZIP")
+- Unzip the downloaded file
 - Go to manage your Chrome extensions
   - Or navigate to chrome://extensions/ in Chrome
 - If you haven't already, toggle "Developer mode" in the top right corner
